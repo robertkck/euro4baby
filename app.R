@@ -95,11 +95,11 @@ ui <- fluidPage(
            fluidRow(
              column(
                width = 6,
-               verbatimTextOutput("totalReturnMother")
+               mod_income_ui("mother")
               ),
              column(
                width = 6,
-               verbatimTextOutput("totalReturnFather")
+               mod_income_ui("father")
              ),
              verbatimTextOutput("totalReturnTogether")
             ),
@@ -113,108 +113,44 @@ ui <- fluidPage(
 server <- function(input, output) {
 
 
+# modules -----------------------------------------------------------------
+
+  r.incomeMother <- mod_income_server(
+    "mother",
+    parent = "mother",
+    netSalary = reactive(input$incomeMother)
+  )
+
+  r.incomeFather <- mod_income_server(
+    "father",
+    parent = "father",
+    netSalary = reactive(input$incomeFather)
+  )
+
 # Inputs ------------------------------------------------------------------
 
-    r.income <- reactive(
-      list(
-        netSalaryMother = input$incomeMother,
-        netSalaryFather = input$incomeFather,
-        incomeMother = input$incomeMother * 12,
-        incomeFather = input$incomeFather * 12
-      )
-    )
-
-    # observe({
-    #   r.income$netSalaryMother <- input$incomeMother
-    #   r.income$netSalaryFather <- input$incomeFather
-    #   r.income$incomeMother <- input$incomeMother * 12
-    #   r.income$incomeFather <- input$incomeFather * 12
-    # })
-
-    output$totalReturnMother <- renderPrint({
-      # req(r.tagsatzWochengeldMother())
-
-        print("Mother")
-        print(paste("Income:", r.income()$incomeMother))
-        # print("Tagsatz Wochengeld:", r.tagsatzWochengeldMother())
-
-    })
-
-      output$totalReturnFather <- renderPrint({
-        print("Father")
-        print(paste("Income:", r.income()$incomeFather))
-      })
-
-    output$totalReturnTogether <- renderPrint({
-      print(r.payments())
-    })
+  output$totalReturnTogether <- renderPrint({
+    print(r.payments())
+  })
 
 # Calculate base ----------------------------------------------------------
-
-    # Father
-
-    r.tagsatzGuenstigkeitFather <- reactive({
-      tagsatzGuenstigkeit <- r.income() |>
-        get_guenstigkeit_base("father") |>
-        calculate_tagsatz_guenstigkeit()
-      return(tagsatzGuenstigkeit)
-    })
-
-    r.tagsatzWochengeldFather <- reactive({
-      tagsatzWochengeld <- r.income() |>
-        get_wochengeld_base("father") |>
-        calculate_tagsatz_wochengeld()
-      return(tagsatzWochengeld)
-    })
-
-    r.tagsatzFather <- reactive({
-      tagsatzFather <- max(
-        r.tagsatzWochengeldFather(),
-        r.tagsatzGuenstigkeitFather()
-      )
-      return(tagsatzFather)
-    })
-
-    # Mother
-
-    r.tagsatzWochengeldMother <- reactive({
-      tagsatzWochengeld <- r.income() |>
-        get_wochengeld_base("mother") |>
-        calculate_tagsatz_wochengeld()
-      return(tagsatzWochengeld)
-    })
-
-    r.tagsatzGuenstigkeitMother <- reactive({
-      tagsatzGuenstigkeit <- r.income() |>
-        get_guenstigkeit_base("mother") |>
-        calculate_tagsatz_guenstigkeit()
-      return(tagsatzGuenstigkeit)
-    })
-
-    r.tagsatzMother <- reactive({
-      tagsatzMother <- max(
-        r.tagsatzWochengeldMother(),
-        r.tagsatzGuenstigkeitMother()
-      )
-      return(tagsatzMother)
-    })
-
 
 # Calculate payments ------------------------------------------------------
 
     r.payments <- reactive({
-      req(r.tagsatzMother(), r.tagsatzFather())
+      req(r.incomeMother(), r.incomeFather())
+
       vec.days <- seq(as.Date("2023-01-01"), as.Date("2025-01-01"), "day")
 
       tbl.paymentsMother <- tibble(
         date = vec.days,
         parent = "Elternteil 1",
-        value = r.tagsatzMother()
+        value = r.incomeMother()$tagsatz
       )
       tbl.paymentsFather <- tibble(
         date = vec.days,
         parent = "Elternteil 2",
-        value = r.tagsatzFather()
+        value = r.incomeFather()$tagsatz
       )
 
       bind_rows(
