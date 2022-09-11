@@ -11,53 +11,14 @@ library(shiny)
 library(dplyr)
 library(echarts4r)
 
-config <- config::get()
-
-get_wochengeld_base <- function(income, parent = "father"){
-  stopifnot(parent %in% c("mother", "father"))
-
-  # Haben Sie vorher Arbeitslosengeld oder Notstandshilfe bezogen, erhalten Sie den bisherigen Betrag plus einen Zuschlag von 80 Prozent.
-  # Wenn Sie Kinderbetreuungsgeld beziehen, erhalten Sie ein tägliches Wochengeld in der Höhe des täglichen Kinderbetreuungsgeldes, sofern Sie vor dem aktuellen Kinderbetreuungsgeld Wochengeld bezogen haben.
-  # Selbstversicherte bei geringfügiger Beschäftigung erhalten einen festen Betrag als tägliches Wochengeld von derzeit EUR 9,78.
-
-  n.days <- 90
-
-  if (parent == "mother") {
-    incomeBase <- (income$netSalayMother * 3) * 1.17 / n.days
-  } else {
-    incomeBase <- (income$netSalayFather * 3) * 1.17 / n.days
-  }
-
-  return(incomeBase)
-}
-
-
-get_guenstigkeit_base <- function(income, parent = "father"){
-  stopifnot(parent %in% c("mother", "father"))
-
-
-  if (parent == "mother") {
-    incomeBase <- income$incomeMother
-  } else {
-    incomeBase <- income$incomeFather
-  }
-
-  return(incomeBase)
-}
-
-calculate_tagsatz_wochengeld <- function(incomeBase){
-  tagsatz <- incomeBase * 0.8
-  # tagsatz <- max(c(tagsatz, config$tagsatz$min))
-  # tagsatz <- min(c(tagsatz, config$tagsatz$max))
-  return(tagsatz)
-}
-
-calculate_tagsatz_guenstigkeit <- function(incomeBase){
-  tagsatz <- (incomeBase * 0.62 + 4000)/365
-  tagsatz <- max(c(tagsatz, config$tagsatz$min))
-  tagsatz <- min(c(tagsatz, config$tagsatz$max))
-  return(tagsatz)
-}
+order_choices <- list(c(1,2), c(1,2,1), c(2, 1), c(2, 1, 2), c(1))
+order_labels <- tibble(
+    name = order_choices |>
+      purrr::map(~paste("Elternteil", .x)) |>
+      purrr::map_chr(~paste(.x, collapse = " - ")),
+    value = order_choices |>
+      purrr::map(~paste("Elternteil", .x))
+  )
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
@@ -68,11 +29,16 @@ ui <- fluidPage(
     # Sidebar with a slider input for number of bins
     sidebarLayout(
         sidebarPanel(
+            # textInput(
+            #   "nameParent1",
+            #   "Name",
+            #   value = "Kathi"
+            # ),
             sliderInput(
               "incomeMother",
               "Nettoeinkomen Elternteil 1",
               min = 0,
-              max = 10000,
+              max = 5000,
               value = 3000
             ),
             checkboxInput(
@@ -81,12 +47,61 @@ ui <- fluidPage(
               value = TRUE
             ),
             tags$hr(),
+            # textInput(
+            #   "nameParent2",
+            #   "Name",
+            #   value = "Robi"
+            # ),
             sliderInput(
               "incomeFather",
               "Nettoeinkomen Elternteil 2",
               min = 0,
-              max = 10000,
+              max = 5000,
               value = 3000
+            ),
+            tags$hr(),
+            checkboxInput(
+              "exactDate",
+              "Exaktes Geburtsdatum",
+              value = TRUE
+            ),
+            dateInput(
+              "birthDate",
+              "Geburtsdatum",
+              value = "2023-09-01"
+            ),
+            tags$hr(),
+            selectInput(
+              "order",
+              "Reihenfolge",
+              choices = order_labels$name,
+              selected = "Elterteil 1 - Elternteil 2"
+            ),
+            fluidRow(
+              column(
+                width = 4,
+                numericInput(
+                  "period1",
+                  "Periode 1",
+                  value = 365,
+                  min = 0,
+                  max = 365
+                )
+              ),
+              column(
+                width = 4,
+                numericInput(
+                  "period2",
+                  "Periode 2",
+                  value = 61,
+                  min = 0,
+                  max = 365
+                )
+              ),
+              column(
+                width = 4,
+                uiOutput("period3")
+              )
             )
         ),
 
@@ -101,6 +116,7 @@ ui <- fluidPage(
                width = 6,
                mod_income_ui("father")
              ),
+             mod_timeframe_ui("timeframe"),
              verbatimTextOutput("totalReturnTogether")
             ),
            # Exact calendar with https://dreamrs.github.io/toastui/articles/extras/calendar.html
@@ -129,6 +145,28 @@ server <- function(input, output) {
 
 # Inputs ------------------------------------------------------------------
 
+  order_parsed <- reactive({
+    order_labels |>
+      filter(name == input$order) |>
+      pull(value) |>
+      unlist()
+  })
+
+  output$period3 <- renderUI({
+    if (length(order_parsed()) == 3){
+      print(order_parsed())
+      numericInput(
+        "period3",
+        "Periode 3",
+        value = 365,
+        min = 0,
+        max = 365
+      )
+    } else {
+      NULL
+    }
+  })
+
   output$totalReturnTogether <- renderPrint({
     print(r.payments())
   })
@@ -140,23 +178,28 @@ server <- function(input, output) {
     r.payments <- reactive({
       req(r.incomeMother(), r.incomeFather())
 
-      vec.days <- seq(as.Date("2023-01-01"), as.Date("2025-01-01"), "day")
-
-      tbl.paymentsMother <- tibble(
-        date = vec.days,
-        parent = "Elternteil 1",
-        value = r.incomeMother()$tagsatz
-      )
-      tbl.paymentsFather <- tibble(
-        date = vec.days,
-        parent = "Elternteil 2",
-        value = r.incomeFather()$tagsatz
+      validate(need(is.numeric(input$period1), "yo"))
+      r.days <- mod_timeframe_server(
+        "timeframe",
+        order = reactive(order_parsed()),
+        exactDate = reactive(input$exactDate),
+        birthDate = reactive(input$birthDate),
+        period1 = reactive(input$period1),
+        period2 = reactive(input$period2),
+        period3 = reactive(input$period3)
       )
 
-      bind_rows(
-        tbl.paymentsMother,
-        tbl.paymentsFather
-      )
+      tbl.payments <- r.days() |>
+        mutate(
+          value = case_when(
+            parent == "Elternteil 1" & periodType == "Mutterschutz"
+              ~ r.incomeMother()$tagsatz / 0.8,
+            parent == "Elternteil 1" ~ r.incomeMother()$tagsatz,
+            parent == "Elternteil 2" ~ r.incomeFather()$tagsatz
+          )
+        )
+
+      return(tbl.payments)
     })
 
 
@@ -172,14 +215,21 @@ server <- function(input, output) {
     output$figPayments <- echarts4r::renderEcharts4r({
       tbl.payments <- r.payments() |>
         mutate(month = lubridate::floor_date(date, "months")) |>
-        group_by(parent, month) |>
-        summarise(value = sum(value, na.rm = TRUE))
+        group_by(parent, periodType, month) |>
+        summarise(value = sum(value, na.rm = TRUE), .groups = NULL) |>
+        ungroup() |>
+        tidyr::complete(month, parent, periodType, fill = list(value = 0)) |>
+        filter(
+          !(parent == "Elternteil 2" & periodType == "Mutterschutz")
+        )
 
       tbl.payments |>
-        group_by(parent) |>
+        group_by(paste(parent, periodType)) |>
         echarts4r::e_charts(month) |>
-        echarts4r::e_area(value, stack = "stack") |>
-        echarts4r::e_title("Zahlungen")
+        echarts4r::e_bar(value, stack = "stack") |>
+        echarts4r::e_title("Zahlungen") |>
+        echarts4r::e_tooltip() |>
+        e_mark_line(data = list(xAxis = as.Date(input$birthDate)), title = "Geburt")
     })
 }
 

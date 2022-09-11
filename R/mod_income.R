@@ -33,15 +33,11 @@ get_guenstigkeit_base <- function(netSalary, parent = "father"){
 
 calculate_tagsatz_wochengeld <- function(incomeBase){
   tagsatz <- incomeBase * 0.8
-  # tagsatz <- max(c(tagsatz, config$tagsatz$min))
-  # tagsatz <- min(c(tagsatz, config$tagsatz$max))
   return(tagsatz)
 }
 
 calculate_tagsatz_guenstigkeit <- function(incomeBase){
   tagsatz <- (incomeBase * 0.62 + 4000)/365
-  tagsatz <- max(c(tagsatz, config$tagsatz$min))
-  tagsatz <- min(c(tagsatz, config$tagsatz$max))
   return(tagsatz)
 }
 
@@ -74,6 +70,8 @@ mod_income_server <- function(id, parent = "father", netSalary = reactive(3000))
         r.tagsatzWochengeld(),
         r.tagsatzGuenstigkeit()
       )
+      tagsatz <- max(c(tagsatz, config$tagsatz$min))
+      tagsatz <- min(c(tagsatz, config$tagsatz$max))
       return(tagsatz)
     })
 
@@ -89,7 +87,10 @@ mod_income_server <- function(id, parent = "father", netSalary = reactive(3000))
       # req(r.tagsatzWochengeld())()
       print(parent)
       print(paste("Jareseinkommen:", r.income()$income))
-      print(paste("Tagsatz:", r.income()$tagsatz))
+      print(paste("Tagsatz Wochengeld:", get_wochengeld_base(netSalary(), parent)))
+      print(paste("KGB Tagsatz Wochengeld:", r.tagsatzWochengeld()))
+      print(paste("KBG Tagsatz Günstigkeit:", r.tagsatzGuenstigkeit()))
+      print(paste("KGB:", r.income()$tagsatz))
       # print("Tagsatz Wochengeld:", r.tagsatzWochengeldMother())
     })
 
