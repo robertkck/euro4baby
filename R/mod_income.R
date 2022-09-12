@@ -79,6 +79,7 @@ mod_income_server <- function(id, parent = "father", netSalary = reactive(3000))
       list(
         netSalary = netSalary(),
         income = netSalary() * 12,
+        tagsatzWochengeld = r.tagsatzWochengeld(),
         tagsatz = r.tagsatz()
       )
     })

@@ -205,7 +205,7 @@ server <- function(input, output) {
         mutate(
           value = case_when(
             parent == "Elternteil 1" & periodType == "Mutterschutz"
-              ~ r.incomeMother()$tagsatz / 0.8,
+              ~ r.incomeMother()$tagsatzWochengeld,
             parent == "Elternteil 1" ~ r.incomeMother()$tagsatz,
             parent == "Elternteil 2" ~ r.incomeFather()$tagsatz
           )
