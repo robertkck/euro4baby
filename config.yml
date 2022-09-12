@@ -1,4 +1,7 @@
 default:
+  wochengeld:
+    selbststaendig: 57.89
+    geringfuegig: 9.78
   tagsatz:
     min: 33.88
     max: 66

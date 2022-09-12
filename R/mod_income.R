@@ -18,14 +18,14 @@ get_wochengeld_base <- function(netSalary, parent = "father"){
 }
 
 
-get_guenstigkeit_base <- function(netSalary, parent = "father"){
+get_guenstigkeit_base <- function(incomePastYear, parent = "father"){
   stopifnot(parent %in% c("mother", "father"))
 
 
   if (parent == "mother") {
-    incomeBase <- netSalary
+    incomeBase <- incomePastYear
   } else {
-    incomeBase <- netSalary
+    incomeBase <- incomePastYear
   }
 
   return(incomeBase)
@@ -48,18 +48,25 @@ mod_income_ui <- function(id) {
   )
 }
 
-mod_income_server <- function(id, parent = "father", netSalary = reactive(3000)) {
+mod_income_server <- function(
+    id,
+    parent = "father",
+    netSalary = reactive(3000),
+    incomePastYear = reactive(0)
+  ) {
   moduleServer(id, function(input, output, session) {
 
     r.tagsatzWochengeld <- reactive({
       tagsatzWochengeld <- netSalary() |>
         get_wochengeld_base(parent) |>
         calculate_tagsatz_wochengeld()
+
+      tagsatzWochengeld <- max(tagsatzWochengeld, config$wochengeld$geringfuegig)
       return(tagsatzWochengeld)
     })
 
     r.tagsatzGuenstigkeit <- reactive({
-      tagsatzGuenstigkeit <- netSalary() |>
+      tagsatzGuenstigkeit <- incomePastYear() |>
         get_guenstigkeit_base(parent) |>
         calculate_tagsatz_guenstigkeit()
       return(tagsatzGuenstigkeit)
@@ -89,9 +96,9 @@ mod_income_server <- function(id, parent = "father", netSalary = reactive(3000))
       print(parent)
       print(paste("Jareseinkommen:", r.income()$income))
       print(paste("Tagsatz Wochengeld:", get_wochengeld_base(netSalary(), parent)))
-      print(paste("KGB Tagsatz Wochengeld:", r.tagsatzWochengeld()))
-      print(paste("KBG Tagsatz Günstigkeit:", r.tagsatzGuenstigkeit()))
-      print(paste("KGB:", r.income()$tagsatz))
+      print(paste("KGB Tagsatz Wochengeld:", scales::dollar(r.tagsatzWochengeld(), prefix =  "€ ")))
+      print(paste("KBG Tagsatz Günstigkeit:", scales::dollar(r.tagsatzGuenstigkeit(), prefix =  "€ ")))
+      print(paste("KGB:", scales::dollar(r.income()$tagsatz, prefix =  "€ ")))
       # print("Tagsatz Wochengeld:", r.tagsatzWochengeldMother())
     })
 
