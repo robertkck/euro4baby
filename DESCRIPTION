@@ -2,9 +2,9 @@ Package: euro4baby
 Title: What the Package Does (One Line, Title Case)
 Version: 0.0.0.9000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
+    person("Robert", "Hawlik", , "rhawlik@outlook.at", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0001-8369-3284"))
+Description: Euro 4 Baby berechnet das Kinderbetreuungsgeld, Mutterschutz und Karenz.
 License: MIT + file LICENSE
 Suggests: 
     testthat (>= 3.0.0)
