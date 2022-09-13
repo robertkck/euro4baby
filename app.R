@@ -22,6 +22,14 @@ order_labels <- tibble(
 format_date <- function(date){
   lubridate::stamp("1. Mai, 1999", locale = "de")(date)
 }
+col <- c(
+  "#78c2ad",
+  "#f3969a",
+  # "#56cc9d",
+  "#6cc3d5",
+  "#ffce67",
+  "#ff7851"
+)
 # Define UI for application that draws a histogram
 
 ui <- navbarPage(
@@ -57,7 +65,7 @@ ui <- navbarPage(
           "Einkommen Vorjahr",
           min = 0,
           max = 1000000,
-          value = 0
+          value = 42000
         ),
         tags$hr(),
         # textInput(
@@ -77,7 +85,7 @@ ui <- navbarPage(
           "Einkommen Vorjahr",
           min = 0,
           max = 1000000,
-          value = 0
+          value = 42000
         ),
         tags$hr(),
         checkboxInput(
@@ -129,6 +137,57 @@ ui <- navbarPage(
       mainPanel(
         fluidRow(
           column(
+            width = 4,
+            div(
+              class = "p-3 mb-2 bg-primary text-white rounded",
+              tags$b(
+                uiOutput("box_totalMutterschutz")
+              ),
+              p("Wochengeld")
+            )
+          ),
+          column(
+            width = 4,
+            div(
+              class = "p-3 mb-2 bg-primary text-white rounded",
+              tags$b(
+                uiOutput("box_totalKinderbetreuungsgeld")
+              ),
+              p("Kinderbetreuungsgeld")
+            )
+            # div(
+            #   class = "p-3 mb-2 bg-primary text-white rounded",
+            #   tags$b(
+            #     uiOutput("box_employmentMother")
+            #   ),
+            #   p("Durchgehende Anstellung seit")
+            # )
+          ),
+          column(
+            width = 4,
+            div(
+              class = "p-3 mb-2 bg-primary text-white rounded",
+              tags$b(
+                uiOutput("box_totalDuration")
+              ),
+              p("Tage")
+            )
+          )
+        ),
+        fluidRow(
+          column(
+            width = 6,
+            h3("Zahlungen"),
+            echarts4r::echarts4rOutput("figPayments")
+          ),
+          column(
+            width = 6,
+            h3("Modelle"),
+            echarts4rOutput("modelle")
+          )
+        ),
+        fluidRow(
+          column(
             width = 6,
             mod_income_ui("mother")
           ),
@@ -137,19 +196,8 @@ ui <- navbarPage(
             mod_income_ui("father")
           )
         ),
-        fluidRow(
-          column(
-            width = 6,
-            uiOutput("totals")
-          ),
-          column(
-            width = 6,
-            echarts4rOutput("modelle")
-          )
-        ),
-        h3("Zahlungen"),
         # Exact calendar with https://dreamrs.github.io/toastui/articles/extras/calendar.html
-        echarts4r::echarts4rOutput("figPayments")
+        uiOutput("totals")
       )
     )
   )
@@ -237,6 +285,56 @@ server <- function(input, output) {
 
 # Calculate totals ---------------------------------------------------------
 
+    # Infoboxes
+    ## Total Mutterschutz
+    r.totalMutterschutz <- reactive({
+      r.payments() |>
+        filter(periodType == "Mutterschutz") |>
+        summarise(total = sum(value, na.rm = TRUE)) |>
+        pull(total)
+    })
+
+    output$box_totalMutterschutz <- renderUI({
+      scales::dollar(
+        prefix = "€ ",
+        r.totalMutterschutz()
+      )
+    })
+
+    ## Total Mutterschutz
+    r.totalKinderbetreuungsgeld <- reactive({
+      r.payments() |>
+        filter(periodType == "Kindergeld") |>
+        summarise(total = sum(value, na.rm = TRUE)) |>
+        pull(total)
+    })
+
+    output$box_totalKinderbetreuungsgeld <- renderUI({
+      scales::dollar(
+        prefix = "€ ",
+        r.totalKinderbetreuungsgeld()
+      )
+    })
+
+    ## Total duration
+    r.totalDuration <- reactive({
+      max(r.payments()$date) - min(r.payments()$date)
+    })
+
+    output$box_totalDuration <- renderUI({
+      as.numeric(r.totalDuration()) |>
+        round(0)
+    })
+
+    ## Start Beschaeftigungsverbot
+    r.employmentDateMother <- reactive({
+      input$birthDate - lubridate::weeks(8) - lubridate::days(182)
+    })
+
+    output$box_employmentMother <- renderUI({
+      format_date(r.employmentDateMother())
+    })
+
     output$totals <- renderUI({
 
       tagList(
@@ -279,6 +377,7 @@ server <- function(input, output) {
         group_by(paste(parent, periodType)) |>
         e_charts(model) |>
         e_bar(value, stack = "stack") |>
+        e_color(color = col) |>
         e_tooltip()
     })
 
@@ -302,6 +401,7 @@ server <- function(input, output) {
         echarts4r::e_charts(month) |>
         echarts4r::e_bar(value, stack = "stack") |>
         echarts4r::e_tooltip() |>
+        e_color(color = col) |>
         e_mark_line(data = list(xAxis = as.Date(input$birthDate)), title = "Geburt")
     })
 }

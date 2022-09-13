@@ -44,7 +44,8 @@ calculate_tagsatz_guenstigkeit <- function(incomeBase){
 mod_income_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    verbatimTextOutput(ns("totalReturn"))
+    uiOutput(ns("ui"))
+    # verbatimTextOutput(ns("totalReturn"))
   )
 }
 
@@ -100,6 +101,74 @@ mod_income_server <- function(
       print(paste("KBG Tagsatz Günstigkeit:", scales::dollar(r.tagsatzGuenstigkeit(), prefix =  "€ ")))
       print(paste("KGB:", scales::dollar(r.income()$tagsatz, prefix =  "€ ")))
       # print("Tagsatz Wochengeld:", r.tagsatzWochengeldMother())
+    })
+
+    output$ui <- renderUI({
+      tagList(
+        h3(
+          ifelse(parent == "mother", "Mutter", "Vater")
+        ),
+        fluidRow(
+          column(
+            width = 3,
+            ifelse(
+              parent == "mother",
+              tagList(
+                div(
+                  class = "p-3 mb-2 bg-secondary text-white rounded",
+                  tags$b(
+                    scales::dollar(get_wochengeld_base(netSalary(), parent), prefix =  "€ ")
+                  ),
+                  p("Tagsatz Wochengeld")
+                )
+              ),
+              tagList(
+                div(
+                  class = "p-3 mb-2 bg-secondary text-white rounded",
+                  tags$b(
+                    scales::dollar(0, prefix =  "€ ")
+                  ),
+                  p("Tagsatz Wochengeld")
+                )
+              )
+            )
+          ),
+          column(
+            width = 3,
+            div(
+              class = "p-3 mb-2 bg-secondary text-white rounded",
+              tags$b(
+                scales::dollar(r.tagsatzWochengeld(), prefix =  "€ ")
+              ),
+              p("KGB Tagsatz Wochengeld")
+            )
+          ),
+          column(
+            width = 3,
+            div(
+              class = "p-3 mb-2 bg-secondary text-white rounded",
+              tags$b(
+                scales::dollar(r.tagsatzGuenstigkeit(), prefix =  "€ ")
+              ),
+              p("KBG Tagsatz Günstigkeit")
+            )
+          ),
+          column(
+            width = 3,
+            div(
+              class = "p-3 mb-2 bg-secondary text-white rounded",
+              tags$b(
+                scales::dollar(r.tagsatzGuenstigkeit(), prefix =  "€ ")
+              ),
+              p("KBG Tagsatz Günstigkeit")
+            )
+          )
+        ) # ,
+        # p(paste("Tagsatz Wochengeld:", get_wochengeld_base(netSalary(), parent))),
+        # p(paste("KGB Tagsatz Wochengeld:", scales::dollar(r.tagsatzWochengeld(), prefix =  "€ "))),
+        # p(paste("KBG Tagsatz Günstigkeit:", scales::dollar(r.tagsatzGuenstigkeit(), prefix =  "€ "))),
+        # p(paste("KGB:", scales::dollar(r.income()$tagsatz, prefix =  "€ ")))
+      )
     })
 
     return(r.income)
