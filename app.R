@@ -195,11 +195,15 @@ ui <- navbarPage(
             width = 6,
             mod_income_ui("father")
           )
-        ),
-        # Exact calendar with https://dreamrs.github.io/toastui/articles/extras/calendar.html
-        uiOutput("totals")
+        )
       )
     )
+  ),
+  tabPanel(
+    "Voraussetzungen",
+    uiOutput("preconditions"),
+    # Exact calendar with https://dreamrs.github.io/toastui/articles/extras/calendar.html
+    uiOutput("importantDates")
   )
 )
 
@@ -335,16 +339,9 @@ server <- function(input, output) {
       format_date(r.employmentDateMother())
     })
 
-    output$totals <- renderUI({
+    output$importantDates <- renderUI({
 
       tagList(
-        h3("Voraussetzungen"),
-        p(tags$b("Durchgehende Beschäftigung Mutter seit: "),
-          format_date(input$birthDate - lubridate::weeks(8) - lubridate::days(182))
-        ),
-        p(tags$b("Durchgehende Beschäftigung Vater seit: "),
-          format_date(input$birthDate - lubridate::days(182))
-        ),
         h3("Wichtige Daten"),
         p(tags$b("Beginn Mutterschutz:"), format_date(input$birthDate - lubridate::weeks(8))),
         p(tags$b("Geburt: "), format_date(input$birthDate)),
@@ -356,6 +353,19 @@ server <- function(input, output) {
             summarise(dauer = max(date) - min(date)) |>
             pull(dauer),
           " Tage"
+        )
+      )
+    })
+
+    output$preconditions <- renderUI({
+
+      tagList(
+        h3("Voraussetzungen"),
+        p(tags$b("Durchgehende Beschäftigung Mutter seit: "),
+          format_date(input$birthDate - lubridate::weeks(8) - lubridate::days(182))
+        ),
+        p(tags$b("Durchgehende Beschäftigung Vater seit: "),
+          format_date(input$birthDate - lubridate::days(182))
         )
       )
     })
