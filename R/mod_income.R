@@ -41,6 +41,16 @@ calculate_tagsatz_guenstigkeit <- function(incomeBase){
   return(tagsatz)
 }
 
+styleBox <- function(colour = "primary", selected = TRUE) {
+
+  style <- paste0("p-3 mb-2 text-white rounded bg-", colour)
+
+  if (!selected) {
+    style <- paste(style,  "opacity-50")
+  }
+  return(style)
+}
+
 mod_income_ui <- function(id) {
   ns <- NS(id)
   tagList(
@@ -71,6 +81,14 @@ mod_income_server <- function(
         get_guenstigkeit_base(parent) |>
         calculate_tagsatz_guenstigkeit()
       return(tagsatzGuenstigkeit)
+    })
+
+    r.tagsatzModel <- reactive({
+      if (r.tagsatzWochengeld() >= r.tagsatzGuenstigkeit()) {
+        "Tagsatz Wochengeld"
+      } else {
+        "Tagsatz Günstigkeit"
+      }
     })
 
     r.tagsatz <- reactive({
@@ -115,7 +133,7 @@ mod_income_server <- function(
               parent == "mother",
               tagList(
                 div(
-                  class = "p-3 mb-2 bg-secondary text-white rounded",
+                  class = styleBox("secondary", selected = parent == "mother"),
                   tags$b(
                     scales::dollar(get_wochengeld_base(netSalary(), parent), prefix =  "€ ")
                   ),
@@ -124,7 +142,7 @@ mod_income_server <- function(
               ),
               tagList(
                 div(
-                  class = "p-3 mb-2 bg-secondary text-white rounded",
+                  class = styleBox("secondary", selected = parent == "mother"),
                   tags$b(
                     scales::dollar(0, prefix =  "€ ")
                   ),
@@ -136,7 +154,7 @@ mod_income_server <- function(
           column(
             width = 3,
             div(
-              class = "p-3 mb-2 bg-secondary text-white rounded",
+              class = styleBox("secondary", selected = r.tagsatzModel() == "Tagsatz Wochengeld"),
               tags$b(
                 scales::dollar(r.tagsatzWochengeld(), prefix =  "€ ")
               ),
@@ -146,7 +164,7 @@ mod_income_server <- function(
           column(
             width = 3,
             div(
-              class = "p-3 mb-2 bg-secondary text-white rounded",
+              class = styleBox("secondary", selected = r.tagsatzModel() == "Tagsatz Günstigkeit"),
               tags$b(
                 scales::dollar(r.tagsatzGuenstigkeit(), prefix =  "€ ")
               ),
@@ -156,11 +174,11 @@ mod_income_server <- function(
           column(
             width = 3,
             div(
-              class = "p-3 mb-2 bg-secondary text-white rounded",
+              class = styleBox("secondary"),
               tags$b(
-                scales::dollar(r.tagsatzGuenstigkeit(), prefix =  "€ ")
+                scales::dollar(r.income()$tagsatz, prefix =  "€ ")
               ),
-              p("KBG Tagsatz Günstigkeit")
+              p("KBG tatsächlich")
             )
           )
         ) # ,

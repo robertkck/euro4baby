@@ -287,7 +287,7 @@ server <- function(input, output) {
 
 
 
-# Calculate totals ---------------------------------------------------------
+# Infoboxes ---------------------------------------------------------------
 
     # Infoboxes
     ## Total Mutterschutz
@@ -338,6 +338,8 @@ server <- function(input, output) {
     output$box_employmentMother <- renderUI({
       format_date(r.employmentDateMother())
     })
+
+# Calculate Preconditions ---------------------------------------------------------
 
     output$importantDates <- renderUI({
 
