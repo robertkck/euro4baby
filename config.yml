@@ -5,3 +5,8 @@ default:
   tagsatz:
     min: 33.88
     max: 66
+  kbgKonto:
+    maxDuration: 851
+    amount1Parent: 12366
+    amount2Parents: 15449
+
