@@ -88,15 +88,14 @@ ui <- navbarPage(
           value = 42000
         ),
         tags$hr(),
-        checkboxInput(
-          "exactDate",
-          "Exaktes Geburtsdatum",
-          value = TRUE
-        ),
         dateInput(
           "birthDate",
           "Geburtsdatum",
           value = "2023-09-01"
+        ),checkboxInput(
+          "exactDate",
+          "Exaktes Geburtsdatum",
+          value = TRUE
         ),
         tags$hr(),
         selectInput(
@@ -113,7 +112,7 @@ ui <- navbarPage(
               "Periode 1",
               value = 213,
               min = 0,
-              max = 365
+              max = config$kbgKonto$maxDuration
             )
           ),
           column(
@@ -340,6 +339,22 @@ server <- function(input, output) {
     })
 
 # Calculate Preconditions ---------------------------------------------------------
+
+    # Preconditions
+    ## KGB
+    # Lebensmittelpunkt in Österreich, Bezug Familienbeihilfe, Gemeinsamer Wohnsitz mit Kind, Einhaltung der Zuverdienstgrenze, Mutter-Kind-Pass Untersuchungen
+
+    ### Einkommensabhängig
+    # Aufrechtes Arbeitsverhältnis, 182 Tage Erwerbstätigkeit, Kein AMS Geld
+    # Sozialversicherungspflichtige Erwerbstäigkeit = Einkommen über Geringfügigkeitsgrenze
+    # Unterbrechung von max. 14 Tage
+    # Alleine bis 365 Tag, zu zweit bis 426
+    # Zuverdienst 7300 bei 365 Tagen = geringfügig
+
+    ### Konto
+    # Alleine 12366€
+    # Geteilt 15449€
+    # Alleine 365 bis 851 Tage, zu zweit von 456 bis 1063 Tage
 
     output$importantDates <- renderUI({
 
