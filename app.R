@@ -321,7 +321,7 @@ server <- function(input, output) {
 
     ## Total duration
     r.totalDuration <- reactive({
-      max(r.payments()$date) - min(r.payments()$date)
+      max(r.days()$date) - min(r.days()$date)
     })
 
     output$box_totalDuration <- renderUI({
