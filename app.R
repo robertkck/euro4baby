@@ -117,13 +117,7 @@ ui <- navbarPage(
           ),
           column(
             width = 4,
-            numericInput(
-              "period2",
-              "Periode 2",
-              value = 213,
-              min = 0,
-              max = 365
-            )
+            uiOutput("period2")
           ),
           column(
             width = 4,
@@ -235,9 +229,23 @@ server <- function(input, output) {
       unlist()
   })
 
+
+  output$period2 <- renderUI({
+    if (length(order_parsed()) >= 2){
+      numericInput(
+        "period2",
+        "Periode 2",
+        value = 213,
+        min = 0,
+        max = 365
+      )
+    } else {
+      NULL
+    }
+  })
+
   output$period3 <- renderUI({
     if (length(order_parsed()) == 3){
-      print(order_parsed())
       numericInput(
         "period3",
         "Periode 3",
@@ -250,9 +258,6 @@ server <- function(input, output) {
     }
   })
 
-  output$totalReturnTogether <- renderPrint({
-    print(r.payments())
-  })
 
 # Calculate base ----------------------------------------------------------
 
@@ -268,22 +273,12 @@ server <- function(input, output) {
       period3 = reactive(input$period3)
     )
 
-    r.payments <- reactive({
-      req(r.incomeMother(), r.incomeFather())
-
-      tbl.payments <- r.days() |>
-        mutate(
-          value = case_when(
-            parent == "Elternteil 1" & periodType == "Mutterschutz"
-              ~ r.incomeMother()$tagsatzWochengeld,
-            parent == "Elternteil 1" ~ r.incomeMother()$tagsatz,
-            parent == "Elternteil 2" ~ r.incomeFather()$tagsatz
-          )
-        )
-
-      return(tbl.payments)
-    })
-
+    r.payments <- mod_payments_server(
+      "Konto",
+      days = r.days,
+      incomeMother = r.incomeMother,
+      incomeFather = r.incomeFather
+    )
 
 
 # Infoboxes ---------------------------------------------------------------
@@ -291,8 +286,8 @@ server <- function(input, output) {
     # Infoboxes
     ## Total Mutterschutz
     r.totalMutterschutz <- reactive({
-      r.payments() |>
-        filter(periodType == "Mutterschutz") |>
+      r.payments$mutterschutz() |>
+        # filter(periodType == "Mutterschutz") |>
         summarise(total = sum(value, na.rm = TRUE)) |>
         pull(total)
     })
@@ -304,10 +299,10 @@ server <- function(input, output) {
       )
     })
 
-    ## Total Mutterschutz
+    ## Total Kinderbetreuungsgeld
     r.totalKinderbetreuungsgeld <- reactive({
-      r.payments() |>
-        filter(periodType == "Kindergeld") |>
+      r.payments$incomeDependent() |>
+        # filter(periodType == "Kinderbetreuungsgeld") |>
         summarise(total = sum(value, na.rm = TRUE)) |>
         pull(total)
     })
@@ -321,7 +316,8 @@ server <- function(input, output) {
 
     ## Total duration
     r.totalDuration <- reactive({
-      max(r.days()$date) - min(r.days()$date)
+      r.days$duration()
+      # max(r.days()$date) - min(r.days()$date)
     })
 
     output$box_totalDuration <- renderUI({
@@ -362,11 +358,11 @@ server <- function(input, output) {
         h3("Wichtige Daten"),
         p(tags$b("Beginn Mutterschutz:"), format_date(input$birthDate - lubridate::weeks(8))),
         p(tags$b("Geburt: "), format_date(input$birthDate)),
-        p(tags$b("Ende der Kinderbetreuung: "), format_date(max(r.days()$date))),
+        p(tags$b("Ende der Kinderbetreuung: "), format_date(max(r.days$tbl()$date))),
         p(
-          tags$b("Dauer der Kindergeld: "),
-          r.days() |>
-            filter(periodType == "Kindergeld") |>
+          tags$b("Dauer des Kinderbetreuungsgelds: "),
+          r.days$tbl() |>
+            filter(periodType == "Kinderbetreuungsgeld") |>
             summarise(dauer = max(date) - min(date)) |>
             pull(dauer),
           " Tage"
@@ -387,21 +383,34 @@ server <- function(input, output) {
       )
     })
 
-    output$modelle <- renderEcharts4r({
-      tbl.payments <- r.payments() |>
-        group_by(parent, periodType) |>
-        summarise(value = sum(value, na.rm = TRUE)) |>
-        mutate(model = "Einkommensabhängiges Kinderbetreuungsgeld")
 
-      tbl.modelle <- bind_rows(
-        tbl.payments,
-        tbl.payments |>
-          filter(periodType == "Mutterschutz") |>
-          mutate(model = "Kinderbetreuungsgeld Konto")
+# Chart -------------------------------------------------------------------
+
+    output$modelle <- renderEcharts4r({
+
+      tbl.incomeDependent <- bind_rows(
+          r.payments$mutterschutz(),
+          r.payments$incomeDependent()
+        ) |>
+        group_by(parent, paymentType) |>
+        summarise(value = sum(value, na.rm = TRUE)) %>%
+        mutate(model = "Einkommensabhängig")
+
+      tbl.konto <- bind_rows(
+          r.payments$mutterschutz(),
+          r.payments$konto()
+        ) |>
+        group_by(parent, paymentType) |>
+        summarise(value = sum(value, na.rm = TRUE)) %>%
+        mutate(model = "Konto")
+
+      tbl.models <- bind_rows(
+        tbl.incomeDependent,
+        tbl.konto
       )
 
-      tbl.modelle |>
-        group_by(paste(parent, periodType)) |>
+      tbl.models |>
+        group_by(paste(parent, paymentType)) |>
         e_charts(model) |>
         e_bar(value, stack = "stack") |>
         e_color(color = col) |>
@@ -409,22 +418,23 @@ server <- function(input, output) {
     })
 
 
-# Chart -------------------------------------------------------------------
-
-
     output$figPayments <- echarts4r::renderEcharts4r({
-      tbl.payments <- r.payments() |>
+      tbl.payments <- bind_rows(
+          r.payments$mutterschutz(),
+          r.payments$incomeDependent()
+        ) |>
+        # filter(model == "Einkommensabhängiges Kinderbetreuungsgeld") %>%
         mutate(month = lubridate::floor_date(date, "months")) |>
-        group_by(parent, periodType, month) |>
+        group_by(parent, paymentType, month) |>
         summarise(value = sum(value, na.rm = TRUE), .groups = NULL) |>
         ungroup() |>
-        tidyr::complete(month, parent, periodType, fill = list(value = 0)) |>
+        tidyr::complete(month, parent, paymentType, fill = list(value = 0)) |>
         filter(
-          !(parent == "Elternteil 2" & periodType == "Mutterschutz")
+          !(parent == "Elternteil 2" & paymentType == "Wochengeld")
         )
 
       tbl.payments |>
-        group_by(paste(parent, periodType)) |>
+        group_by(paste(parent, paymentType)) |>
         echarts4r::e_charts(month) |>
         echarts4r::e_bar(value, stack = "stack") |>
         echarts4r::e_tooltip() |>

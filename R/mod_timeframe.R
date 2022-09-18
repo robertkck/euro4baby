@@ -1,4 +1,4 @@
-generate_kindergeld_period <- function(startDate, period, parent){
+generate_kinderbetreuungsgeld_period <- function(startDate, period, parent){
   tibble(
     date = seq(
       startDate,
@@ -6,7 +6,7 @@ generate_kindergeld_period <- function(startDate, period, parent){
       "day"
     ),
     parent = parent,
-    periodType = "Kindergeld"
+    periodType = "Kinderbetreuungsgeld"
   )
 }
 
@@ -41,41 +41,42 @@ mod_timeframe_server <- function(
         periodType = "Mutterschutz"
       )
 
-      kindergeldPeriod1 <- generate_kindergeld_period(
-        startDate = max(mutterschutzPeriod$date),
+      kinderbetreuungsgeldPeriod1 <- generate_kinderbetreuungsgeld_period(
+        startDate = max(mutterschutzPeriod$date) + 1,
         period = period1(),
         parent = order()[1]
       )
 
       tbl.days <- bind_rows(
         mutterschutzPeriod,
-        kindergeldPeriod1
+        kinderbetreuungsgeldPeriod1
       )
 
       if (length(order()) >= 2) {
-        kindergeldPeriod2 <- generate_kindergeld_period(
-          startDate = max(kindergeldPeriod1$date),
+        req(period2())
+        kinderbetreuungsgeldPeriod2 <- generate_kinderbetreuungsgeld_period(
+          startDate = max(kinderbetreuungsgeldPeriod1$date) + 1,
           period = period2(),
           parent = order()[2]
         )
 
         tbl.days <- bind_rows(
           tbl.days,
-          kindergeldPeriod2
+          kinderbetreuungsgeldPeriod2
         )
       }
 
       if (length(order()) == 3){
         req(period3())
-        kindergeldPeriod3 <- generate_kindergeld_period(
-          startDate = max(kindergeldPeriod2$date),
+        kinderbetreuungsgeldPeriod3 <- generate_kinderbetreuungsgeld_period(
+          startDate = max(kinderbetreuungsgeldPeriod2$date),
           period = period3(),
           parent = order()[3]
         )
 
         tbl.days <- bind_rows(
           tbl.days,
-          kindergeldPeriod3
+          kinderbetreuungsgeldPeriod3
         )
       }
       return(
@@ -88,6 +89,16 @@ mod_timeframe_server <- function(
       print(r.days())
     })
 
-    return(r.days)
+    duration <- reactive({
+      max(r.days()$date) - min(r.days()$date)
+    })
+
+    return(
+      list(
+        tbl = r.days,
+        birthDate = birthDate,
+        duration = duration
+      )
+    )
   }
 )}
