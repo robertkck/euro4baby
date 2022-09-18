@@ -37,7 +37,7 @@ ui <- navbarPage(
   theme = bslib::bs_theme(bootswatch = "minty"),
 
   # Application title
-  title = "Euro 4 Baby",
+  title = "Kinderbetreuungsgeld",
 
   tabPanel(
     "Planer",
