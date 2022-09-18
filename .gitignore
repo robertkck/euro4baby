@@ -2,5 +2,6 @@
 .Rhistory
 .RData
 .Ruserdata
+references/
 # {shinytest2}: Ignore new debug snapshots for `$expect_values()`
 *_.new.png
