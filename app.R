@@ -20,7 +20,8 @@ order_labels <- tibble(
       purrr::map(~paste("Elternteil", .x))
   )
 format_date <- function(date){
-  lubridate::stamp("1. Mai, 1999", locale = "de")(date)
+  date
+  # lubridate::stamp("1. Mai, 1999", locale = "de")(date)
 }
 col <- c(
   "#78c2ad",
