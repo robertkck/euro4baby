@@ -54,7 +54,7 @@ ui <- navbarPage(
           "Nettoeinkomen Elternteil 1",
           min = 0,
           max = 5000,
-          value = 3000
+          value = 2000
         ),
         checkboxInput(
           "isMother",
@@ -66,7 +66,7 @@ ui <- navbarPage(
           "Einkommen Vorjahr",
           min = 0,
           max = 1000000,
-          value = 42000
+          value = 28000
         ),
         tags$hr(),
         # textInput(
@@ -79,14 +79,14 @@ ui <- navbarPage(
           "Nettoeinkomen Elternteil 2",
           min = 0,
           max = 5000,
-          value = 3000
+          value = 2000
         ),
         numericInput(
           "incomePastYearFather",
           "Einkommen Vorjahr",
           min = 0,
           max = 1000000,
-          value = 42000
+          value = 28000
         ),
         tags$hr(),
         dateInput(
