@@ -144,9 +144,9 @@ mod_income_server <- function(
                 div(
                   class = styleBox("secondary", selected = parent == "mother"),
                   tags$b(
-                    scales::dollar(0, prefix =  "€ ")
+                    scales::dollar(get_wochengeld_base(netSalary(), parent), prefix =  "€ ")
                   ),
-                  p("Tagsatz Wochengeld")
+                  p("Fiktiver Tagsatz Wochengeld")
                 )
               )
             )
