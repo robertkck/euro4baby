@@ -6,6 +6,8 @@
 
 Euro4Baby visualises different options for the Austrian childcare allowance. 
 
+A hosted verision of the app is available at [kinderbetreuungsrechner.rhawlik.me](https://kinderbetreuungsrechner.rhawlik.me).
+
 ## Run
 
 Run the dashboard by installing the required packages and running the Shiny app. 
