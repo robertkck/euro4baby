@@ -51,6 +51,14 @@
       "Hash": "e9c08b94391e9f3f97355841229124f2",
       "Requirements": []
     },
+    "assertthat": {
+      "Package": "assertthat",
+      "Version": "0.2.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "50c838a310445e954bc13f26f26a6ecf",
+      "Requirements": []
+    },
     "backports": {
       "Package": "backports",
       "Version": "1.4.1",
@@ -278,6 +286,28 @@
         "rlang"
       ]
     },
+    "emo": {
+      "Package": "emo",
+      "Version": "0.0.0.9000",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "emo",
+      "RemoteUsername": "hadley",
+      "RemoteRef": "HEAD",
+      "RemoteSha": "3f03b11491ce3d6fc5601e210927eff73bf8e350",
+      "Hash": "10f2391a926b0087a671ed9965ea30a3",
+      "Requirements": [
+        "assertthat",
+        "crayon",
+        "glue",
+        "lubridate",
+        "magrittr",
+        "purrr",
+        "rlang",
+        "stringr"
+      ]
+    },
     "evaluate": {
       "Package": "evaluate",
       "Version": "0.16",
@@ -372,16 +402,6 @@
       "Hash": "36b4265fb818f6a342bed217549cd896",
       "Requirements": []
     },
-    "highr": {
-      "Package": "highr",
-      "Version": "0.9",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "8eb36c8125038e648e5d111c0d7b2ed4",
-      "Requirements": [
-        "xfun"
-      ]
-    },
     "htmltools": {
       "Package": "htmltools",
       "Version": "0.5.3",
@@ -445,20 +465,6 @@
       "Repository": "CRAN",
       "Hash": "d07e729b27b372429d42d24d503613a0",
       "Requirements": []
-    },
-    "knitr": {
-      "Package": "knitr",
-      "Version": "1.40",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "caea8b0f899a0b1738444b9bc47067e7",
-      "Requirements": [
-        "evaluate",
-        "highr",
-        "stringr",
-        "xfun",
-        "yaml"
-      ]
     },
     "labeling": {
       "Package": "labeling",
@@ -694,25 +700,6 @@
       "Hash": "971c3d698fc06dabdac6bc4bcda72dc4",
       "Requirements": []
     },
-    "rmarkdown": {
-      "Package": "rmarkdown",
-      "Version": "2.16",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "0f3eaa1547e2c6880d4de1c043ac6826",
-      "Requirements": [
-        "bslib",
-        "evaluate",
-        "htmltools",
-        "jquerylib",
-        "jsonlite",
-        "knitr",
-        "stringr",
-        "tinytex",
-        "xfun",
-        "yaml"
-      ]
-    },
     "rprojroot": {
       "Package": "rprojroot",
       "Version": "2.0.3",
@@ -895,16 +882,6 @@
         "vctrs"
       ]
     },
-    "tinytex": {
-      "Package": "tinytex",
-      "Version": "0.41",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "6edfe5df6431a724b4254c0591e34ab3",
-      "Requirements": [
-        "xfun"
-      ]
-    },
     "utf8": {
       "Package": "utf8",
       "Version": "1.2.2",
@@ -955,14 +932,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "c0e49a9760983e81e55cdd9be92e7182",
-      "Requirements": []
-    },
-    "xfun": {
-      "Package": "xfun",
-      "Version": "0.33",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "1a666f915cd65072f4ccf5b2888d5d39",
       "Requirements": []
     },
     "xtable": {
