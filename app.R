@@ -198,6 +198,10 @@ ui <- navbarPage(
     uiOutput("preconditions"),
     # Exact calendar with https://dreamrs.github.io/toastui/articles/extras/calendar.html
     uiOutput("importantDates")
+  ),
+  tabPanel(
+    "Impressum",
+    mod_imprint_ui("imprint")
   )
 )
 
