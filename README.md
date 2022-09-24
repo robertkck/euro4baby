@@ -6,7 +6,7 @@
 
 Euro4Baby visualises different options for the Austrian childcare allowance. 
 
-A hosted verision of the app is available at [kinderbetreuungsrechner.rhawlik.me](https://kinderbetreuungsrechner.rhawlik.me).
+A hosted verision of the app is available at [kinderbetreuungsgeld.rhawlik.me](https://kinderbetreuungsgeld.rhawlik.me).
 
 ## Run
 
