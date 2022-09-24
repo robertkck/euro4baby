@@ -1,6 +1,6 @@
 
-get_wochengeld_base <- function(netSalary, parent = "father"){
-  stopifnot(parent %in% c("mother", "father"))
+get_wochengeld_base <- function(netSalary){
+  # stopifnot(parent %in% c("mother", "father"))
 
   # Haben Sie vorher Arbeitslosengeld oder Notstandshilfe bezogen, erhalten Sie den bisherigen Betrag plus einen Zuschlag von 80 Prozent.
   # Wenn Sie Kinderbetreuungsgeld beziehen, erhalten Sie ein tägliches Wochengeld in der Höhe des täglichen Kinderbetreuungsgeldes, sofern Sie vor dem aktuellen Kinderbetreuungsgeld Wochengeld bezogen haben.
@@ -8,28 +8,24 @@ get_wochengeld_base <- function(netSalary, parent = "father"){
 
   n.days <- 90
 
-  if (parent == "mother") {
-    incomeBase <- (netSalary * 3) * 1.17 / n.days
-  } else {
-    incomeBase <- (netSalary * 3) * 1.17 / n.days
-  }
+  incomeBase <- (netSalary * 3) * 1.17 / n.days
 
   return(incomeBase)
 }
 
 
-get_guenstigkeit_base <- function(incomePastYear, parent = "father"){
-  stopifnot(parent %in% c("mother", "father"))
-
-
-  if (parent == "mother") {
-    incomeBase <- incomePastYear
-  } else {
-    incomeBase <- incomePastYear
-  }
-
-  return(incomeBase)
-}
+# get_guenstigkeit_base <- function(incomePastYear, parent = "father"){
+#   stopifnot(parent %in% c("mother", "father"))
+#
+#
+#   if (parent == "mother") {
+#     incomeBase <- incomePastYear
+#   } else {
+#     incomeBase <- incomePastYear
+#   }
+#
+#   return(incomeBase)
+# }
 
 calculate_tagsatz_wochengeld <- function(incomeBase){
   tagsatz <- incomeBase * 0.8
@@ -61,7 +57,8 @@ mod_income_ui <- function(id) {
 
 mod_income_server <- function(
     id,
-    parent = "father",
+    parent = "Elternteil 1",
+    givesBirth = reactive(TRUE),
     netSalary = reactive(3000),
     incomePastYear = reactive(0)
   ) {
@@ -69,7 +66,7 @@ mod_income_server <- function(
 
     r.tagsatzWochengeld <- reactive({
       tagsatzWochengeld <- netSalary() |>
-        get_wochengeld_base(parent) |>
+        get_wochengeld_base() |>
         calculate_tagsatz_wochengeld()
 
       tagsatzWochengeld <- max(tagsatzWochengeld, config$wochengeld$geringfuegig)
@@ -78,7 +75,7 @@ mod_income_server <- function(
 
     r.tagsatzGuenstigkeit <- reactive({
       tagsatzGuenstigkeit <- incomePastYear() |>
-        get_guenstigkeit_base(parent) |>
+        # get_guenstigkeit_base(parent) |>
         calculate_tagsatz_guenstigkeit()
       return(tagsatzGuenstigkeit)
     })
@@ -114,7 +111,7 @@ mod_income_server <- function(
       # req(r.tagsatzWochengeld())()
       print(parent)
       print(paste("Jareseinkommen:", r.income()$income))
-      print(paste("Tagsatz Wochengeld:", get_wochengeld_base(netSalary(), parent)))
+      print(paste("Tagsatz Wochengeld:", get_wochengeld_base(netSalary())))
       print(paste("KGB Tagsatz Wochengeld:", scales::dollar(r.tagsatzWochengeld(), prefix =  "€ ")))
       print(paste("KBG Tagsatz Günstigkeit:", scales::dollar(r.tagsatzGuenstigkeit(), prefix =  "€ ")))
       print(paste("KGB:", scales::dollar(r.income()$tagsatz, prefix =  "€ ")))
@@ -123,28 +120,26 @@ mod_income_server <- function(
 
     output$ui <- renderUI({
       tagList(
-        h3(
-          ifelse(parent == "mother", "Mutter", "Vater")
-        ),
+        h3(parent),
         fluidRow(
           column(
             width = 3,
             ifelse(
-              parent == "mother",
+              givesBirth(),
               tagList(
                 div(
-                  class = styleBox("secondary", selected = parent == "mother"),
+                  class = styleBox("secondary", selected = givesBirth()),
                   tags$b(
-                    scales::dollar(get_wochengeld_base(netSalary(), parent), prefix =  "€ ")
+                    scales::dollar(get_wochengeld_base(netSalary()), prefix =  "€ ")
                   ),
                   p("Tagsatz Wochengeld")
                 )
               ),
               tagList(
                 div(
-                  class = styleBox("secondary", selected = parent == "mother"),
+                  class = styleBox("secondary", selected = givesBirth()),
                   tags$b(
-                    scales::dollar(get_wochengeld_base(netSalary(), parent), prefix =  "€ ")
+                    scales::dollar(get_wochengeld_base(netSalary()), prefix =  "€ ")
                   ),
                   p("Fiktiver Tagsatz Wochengeld")
                 )

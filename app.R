@@ -57,8 +57,8 @@ ui <- navbarPage(
           value = 2000
         ),
         checkboxInput(
-          "isMother",
-          "Mutter",
+          "givesBirth",
+          "gebährend",
           value = TRUE
         ),
         numericInput(
@@ -183,11 +183,11 @@ ui <- navbarPage(
         fluidRow(
           column(
             width = 6,
-            mod_income_ui("mother")
+            mod_income_ui("parent1")
           ),
           column(
             width = 6,
-            mod_income_ui("father")
+            mod_income_ui("parent2")
           )
         )
       )
@@ -212,15 +212,17 @@ server <- function(input, output) {
 # modules -----------------------------------------------------------------
 
   r.incomeMother <- mod_income_server(
-    "mother",
-    parent = "mother",
+    "parent1",
+    parent = "Elternteil 1",
+    givesBirth = reactive(input$givesBirth),
     netSalary = reactive(input$incomeMother),
     incomePastYear = reactive(input$incomePastYearMother)
   )
 
   r.incomeFather <- mod_income_server(
-    "father",
-    parent = "father",
+    "parent2",
+    parent = "Elternteil 2",
+    givesBirth = reactive(FALSE),
     netSalary = reactive(input$incomeFather),
     incomePastYear = reactive(input$incomePastYearFather)
   )
@@ -379,10 +381,10 @@ server <- function(input, output) {
 
       tagList(
         h3("Voraussetzungen"),
-        p(tags$b("Durchgehende Beschäftigung Mutter seit: "),
+        p(tags$b("Durchgehende Beschäftigung Elternteil 1 seit: "),
           format_date(input$birthDate - lubridate::weeks(8) - lubridate::days(182))
         ),
-        p(tags$b("Durchgehende Beschäftigung Vater seit: "),
+        p(tags$b("Durchgehende Beschäftigung Elternteil 2 seit: "),
           format_date(input$birthDate - lubridate::days(182))
         )
       )
