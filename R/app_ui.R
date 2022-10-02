@@ -199,6 +199,8 @@ golem_add_external_resources <- function() {
     app_sys("app/www")
   )
 
+  config <<- config::get(file = app_sys("config.yml"))
+
   tags$head(
     favicon(ext = 'png'),
     bundle_resources(

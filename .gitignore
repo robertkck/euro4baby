@@ -7,3 +7,5 @@ references/
 # {shinytest2}: Ignore new debug snapshots for `$expect_values()`
 *_.new.png
 dev/
+deploy/euro4baby_*.tar.gz
+deploy/README
