@@ -1,4 +1,7 @@
 default:
+  beschaeftigungsverbot:
+    pre: 56
+    post: 56
   wochengeld:
     selbststaendig: 57.89
     geringfuegig: 9.78
@@ -9,4 +12,6 @@ default:
     maxDuration: 851
     amount1Parent: 12366
     amount2Parents: 15449
+  einkommensabhaengig:
+    beschaeftigtDauer: 182
 

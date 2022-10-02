@@ -1,4 +1,4 @@
-generate_kinderbetreuungsgeld_period <- function(startDate, period, parent){
+generate_kinderbetreuungsgeld_period <- function(startDate, period, parent, exact_date = TRUE){
   tibble(
     date = seq(
       startDate,
@@ -20,7 +20,6 @@ mod_timeframe_ui <- function(id) {
 mod_timeframe_server <- function(
     id,
     order = reactive(c("Elternteil 1", "Elternteil 2")),
-    exactDate = reactive(TRUE),
     birthDate = reactive(as.Date("2023-09-01")),
     period1 = reactive(356),
     period2 = reactive(61),
@@ -31,15 +30,21 @@ mod_timeframe_server <- function(
     r.days <- reactive({
       req(birthDate(), period1())
 
+
+# Beschäftigungsverbot ----------------------------------------------------
+
       mutterschutzPeriod <- tibble(
         date = seq(
-          birthDate() - lubridate::weeks(8),
-          birthDate() + lubridate::weeks(8),
+          birthDate() - config$beschaeftigungsverbot$pre,
+          birthDate() + config$beschaeftigungsverbot$post,
           "day"
         ),
         parent = "Elternteil 1",
         periodType = "Mutterschutz"
       )
+
+
+# Period 1 ----------------------------------------------------------------
 
       kinderbetreuungsgeldPeriod1 <- generate_kinderbetreuungsgeld_period(
         startDate = max(mutterschutzPeriod$date) + 1,
@@ -79,10 +84,14 @@ mod_timeframe_server <- function(
           kinderbetreuungsgeldPeriod3
         )
       }
-      return(
-        tbl.days |>
-          arrange(date)
-      )
+
+      tbl.days <- tbl.days |>
+        mutate(
+          dateOrdinal = row_number() - 1 - config$beschaeftigungsverbot$pre
+        ) |>
+        arrange(date)
+
+      return(tbl.days)
     })
 
     output$stats <- renderPrint({
@@ -90,7 +99,7 @@ mod_timeframe_server <- function(
     })
 
     duration <- reactive({
-      max(r.days()$date) - min(r.days()$date)
+      max(r.days()$date) - min(r.days()$date) + 1
     })
 
     return(

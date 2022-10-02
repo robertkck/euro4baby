@@ -65,6 +65,24 @@ app_server <- function(input, output, session) {
     }
   })
 
+  output$birthDate <- renderUI({
+    if (input$exactDate) {
+      dateInput(
+        "birthDate",
+        "Geburtsdatum",
+        value = Sys.Date() + 365
+      )
+    } else {
+      HTML(
+        '
+        <div class="form-group shiny-input-container">
+          <label class="control-label" id="birthDateOrdinal-label" for="birthDateOrdinal">Geburtsdatum</label>
+          <input id="birthDateOrdinal" type="number" class="form-control" value="0" disabled/>
+        </div>
+        '
+      )
+    }
+  })
 
   # Calculate base ----------------------------------------------------------
 
@@ -73,7 +91,6 @@ app_server <- function(input, output, session) {
   r.days <- mod_timeframe_server(
     "timeframe",
     order = reactive(order_parsed()),
-    exactDate = reactive(input$exactDate),
     birthDate = reactive(input$birthDate),
     period1 = reactive(input$period1),
     period2 = reactive(input$period2),
@@ -133,12 +150,12 @@ app_server <- function(input, output, session) {
   })
 
   ## Start Beschaeftigungsverbot
-  r.employmentDateMother <- reactive({
+  r.employmentBanDate <- reactive({
     input$birthDate - lubridate::weeks(8) - lubridate::days(182)
   })
 
-  output$box_employmentMother <- renderUI({
-    format_date(r.employmentDateMother())
+  output$box_employmentBan <- renderUI({
+    format_date(r.employmentBanDate())
   })
 
   # Calculate Preconditions ---------------------------------------------------------
@@ -161,31 +178,73 @@ app_server <- function(input, output, session) {
 
   output$importantDates <- renderUI({
 
+    if (input$exactDate) {
+      dates <- list(
+        BeginnMutterschutz = input$birthDate - config$beschaeftigungsverbot$pre,
+        Geburt = input$birthDate,
+        EndeKinderbetreuung = max(r.days$tbl()$date)
+      )
+      dates <- purrr::map(dates, format_date)
+    } else {
+      dates <- list(
+        BeginnMutterschutz = paste0(config$beschaeftigungsverbot$pre / 7, " Wochen vor Geburt"),
+        Geburt = "Tag 0",
+        EndeKinderbetreuung = paste0("Tag ", max(r.days$tbl()$dateOrdinal))
+      )
+    }
+
+    if (!input$givesBirth) {
+      dates$BeginnMutterschutz <- "nicht zutreffend"
+    }
+
+    dates$Dauer <- paste0(
+      r.days$tbl() |>
+        filter(periodType == "Kinderbetreuungsgeld") |>
+        summarise(dauer = max(dateOrdinal) - min(dateOrdinal)) |>
+        pull(dauer),
+      " Tage"
+    )
+
     tagList(
       h3("Wichtige Daten"),
-      p(tags$b("Beginn Mutterschutz:"), format_date(input$birthDate - lubridate::weeks(8))),
-      p(tags$b("Geburt: "), format_date(input$birthDate)),
-      p(tags$b("Ende der Kinderbetreuung: "), format_date(max(r.days$tbl()$date))),
-      p(
-        tags$b("Dauer des Kinderbetreuungsgelds: "),
-        r.days$tbl() |>
-          filter(periodType == "Kinderbetreuungsgeld") |>
-          summarise(dauer = max(date) - min(date)) |>
-          pull(dauer),
-        " Tage"
-      )
+      p(tags$b("Beginn Mutterschutz:"), dates$BeginnMutterschutz),
+      p(tags$b("Geburt: "), dates$Geburt),
+      p(tags$b("Ende der Kinderbetreuung: "), dates$EndeKinderbetreuung),
+      p(tags$b("Dauer des Kinderbetreuungsgelds: "), dates$Dauer)
     )
   })
 
   output$preconditions <- renderUI({
 
+    if (input$exactDate) {
+      dates <- list(
+        EmployedParent2 = input$birthDate - config$einkommensabhaengig$beschaeftigtDauer
+      )
+      if (input$givesBirth) {
+        dates$EmployedParent1 = input$birthDate - config$beschaeftigungsverbot$pre - config$einkommensabhaengig$beschaeftigtDauer
+      } else {
+        dates$EmployedParent1 = input$birthDate - config$einkommensabhaengig$beschaeftigtDauer
+      }
+
+      dates <- purrr::map(dates, format_date)
+    } else {
+      dates <- list(
+        EmployedParent1 = ifelse(
+          input$givesBirth,
+          "6 Monate vor Beginn des Beschäftigungsverbotes",
+          "6 Monate vor Geburt"
+        ),
+        EmployedParent2 = "6 Monate vor Geburt"
+      )
+    }
+
     tagList(
       h3("Voraussetzungen"),
       p(tags$b("Durchgehende Beschäftigung Elternteil 1 seit: "),
-        format_date(input$birthDate - lubridate::weeks(8) - lubridate::days(182))
+        dates$EmployedParent1
       ),
       p(tags$b("Durchgehende Beschäftigung Elternteil 2 seit: "),
-        format_date(input$birthDate - lubridate::days(182))
+        dates$EmployedParent2
       )
     )
   })
@@ -200,7 +259,7 @@ app_server <- function(input, output, session) {
       r.payments$incomeDependent()
     ) |>
       group_by(parent, paymentType) |>
-      summarise(value = sum(value, na.rm = TRUE)) %>%
+      summarise(value = sum(value, na.rm = TRUE)) |>
       mutate(model = "Einkommensabhängig")
 
     tbl.konto <- bind_rows(
@@ -208,7 +267,7 @@ app_server <- function(input, output, session) {
       r.payments$konto()
     ) |>
       group_by(parent, paymentType) |>
-      summarise(value = sum(value, na.rm = TRUE)) %>%
+      summarise(value = sum(value, na.rm = TRUE)) |>
       mutate(model = "Konto")
 
     tbl.models <- bind_rows(
@@ -229,9 +288,24 @@ app_server <- function(input, output, session) {
     tbl.payments <- bind_rows(
       r.payments$mutterschutz(),
       r.payments$incomeDependent()
-    ) |>
-      # filter(model == "Einkommensabhängiges Kinderbetreuungsgeld") %>%
-      mutate(month = lubridate::floor_date(date, "months")) |>
+    )
+
+    if (input$exactDate) {
+      tbl.payments <- tbl.payments |>
+        mutate(month = lubridate::floor_date(date, "months"))
+    } else {
+      tbl.payments <- tbl.payments |>
+        mutate(
+          floorMonth = floor(dateOrdinal / 30.437),
+          month = factor(
+            floorMonth,
+            levels = min(floorMonth):max(floorMonth),
+            labels = paste("M", min(floorMonth):max(floorMonth))
+          )
+        )
+    }
+
+    tbl.paymentsMonthly <- tbl.payments |>
       group_by(parent, paymentType, month) |>
       summarise(value = sum(value, na.rm = TRUE), .groups = NULL) |>
       ungroup() |>
@@ -240,12 +314,22 @@ app_server <- function(input, output, session) {
         !(parent == "Elternteil 2" & paymentType == "Wochengeld")
       )
 
-    tbl.payments |>
+    fig.payments <- tbl.paymentsMonthly |>
       group_by(paste(parent, paymentType)) |>
-      echarts4r::e_charts(month) |>
-      echarts4r::e_bar(value, stack = "stack") |>
-      echarts4r::e_tooltip() |>
-      e_color(color = palette) |>
-      e_mark_line(data = list(xAxis = as.Date(input$birthDate)), title = "Geburt")
+      e_charts(month) |>
+      e_bar(value, stack = "stack") |>
+      e_tooltip() |>
+      e_color(color = palette)
+
+    if (input$exactDate) {
+      fig.payments <- fig.payments |>
+        e_mark_line(
+          data = list(xAxis = input$birthDate),
+          title = "Geburt"
+        )
+    }
+
+
+    fig.payments
   })
 }

@@ -23,7 +23,7 @@ mod_payments_server <- function(
       tbl.days <- days$tbl()
 
       tbl.days |>
-        filter(parent == "Elternteil 1" & periodType == "Mutterschutz") %>%
+        filter(parent == "Elternteil 1" & periodType == "Mutterschutz") |>
         mutate(
           paymentType = "Wochengeld",
           value = incomeMother()$tagsatzWochengeld
@@ -33,8 +33,8 @@ mod_payments_server <- function(
     tbl.paymentsIncomeDependent <- reactive({
       tbl.days <- days$tbl()
 
-      tbl.paymentsKonto <- tbl.days %>%
-        filter(!(parent == "Elternteil 1" & periodType == "Mutterschutz")) %>%
+      tbl.paymentsKonto <- tbl.days |>
+        filter(!(parent == "Elternteil 1" & periodType == "Mutterschutz")) |>
         mutate(
           paymentType = "Kinderbetreuungsgeld",
           value = case_when(
@@ -47,13 +47,12 @@ mod_payments_server <- function(
     tbl.paymentsKonto <- reactive({
       tbl.days <- days$tbl()
 
-      # TODO: Pass birthDate either from input or via days$birthDate()
       birthDate <- days$birthDate()
 
       duration <- as.numeric(max(tbl.days$date) - birthDate)
 
-      durationElternteil2 <- tbl.days %>%
-        filter(parent == "Elternteil 2") %>%
+      durationElternteil2 <- tbl.days |>
+        filter(parent == "Elternteil 2") |>
         nrow()
 
       if (durationElternteil2 / duration >= 0.2){
@@ -67,8 +66,8 @@ mod_payments_server <- function(
       # If the Wochengeld is larger than KGB, "KGB ist ruhend gestellt"
       # If KGB is larger than Wochengeld, receive Wochengeld + the differce
 
-      tbl.paymentsKonto <- tbl.days %>%
-        filter(date >= birthDate) %>%
+      tbl.paymentsKonto <- tbl.days |>
+        filter(date >= birthDate) |>
         mutate(
           paymentType = "Kinderbetreuungsgeld",
           value = case_when(

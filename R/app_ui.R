@@ -65,11 +65,8 @@ app_ui <- function(request) {
               value = 28000
             ),
             tags$hr(),
-            dateInput(
-              "birthDate",
-              "Geburtsdatum",
-              value = "2023-09-01"
-            ),checkboxInput(
+            uiOutput("birthDate"),
+            checkboxInput(
               "exactDate",
               "Exaktes Geburtsdatum",
               value = TRUE
