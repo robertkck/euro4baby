@@ -9,9 +9,23 @@ Description: Euro4Baby visualises different options for the Austrian
 License: MIT + file LICENSE
 URL: https://github.com/robertkck/euro4baby
 BugReports: https://github.com/robertkck/euro4baby/issues
+Depends: 
+    R (>= 2.10)
+Imports: 
+    bslib,
+    config,
+    dplyr,
+    echarts4r,
+    emo,
+    golem,
+    lubridate,
+    scales,
+    shiny,
+    tidyr
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 Encoding: UTF-8
+LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.1

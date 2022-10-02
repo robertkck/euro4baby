@@ -69,7 +69,10 @@ mod_income_server <- function(
         get_wochengeld_base() |>
         calculate_tagsatz_wochengeld()
 
-      tagsatzWochengeld <- max(tagsatzWochengeld, config$wochengeld$geringfuegig)
+      tagsatzWochengeld <- max(
+        tagsatzWochengeld,
+        config$wochengeld$geringfuegig
+      )
       return(tagsatzWochengeld)
     })
 

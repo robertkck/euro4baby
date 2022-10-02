@@ -5,4 +5,4 @@ default:
 production:
   app_prod: yes
 dev:
-  golem_wd: C:/Users/robert.hawlik/OneDrive/Arbeit/wikifolio/lol
+  golem_wd: !expr here::here()
