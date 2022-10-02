@@ -5,3 +5,11 @@
 ^LICENSE\.md$
 ^README\.Rmd$
 ^cran-comments\.md$
+^.*\.Rproj$
+^data-raw$
+dev_history.R
+^dev$
+$run_dev.*
+^CODE_OF_CONDUCT\.md$
+^Dockerfile$
+^\.dockerignore$
